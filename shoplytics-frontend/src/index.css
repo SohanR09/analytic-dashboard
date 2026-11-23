@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Central theme. Values are space-separated RGB so Tailwind opacity modifiers work.
+ * Palette: Deep Blue #09318D · Pure White · Bubblegum Pink #FD91CC (one accent, used sparingly).
+ */
+:root {
+  --primary: 9 49 141;          /* #09318D deep blue */
+  --primary-dark: 5 27 87;      /* #051B57 sidebar / brand surfaces */
+  --primary-bright: 37 84 230;  /* #2554E6 gradient highlight */
+  --secondary: 253 145 204;     /* #FD91CC bubblegum: highlights on dark surfaces, soft accents */
+  --accent: 201 47 127;         /* #C92F7F pink with AA contrast for white text (buttons) */
+  --light-blue: 236 241 255;
+  --soft-pink: 255 238 247;
+  --background: 245 247 254;
+  --text: 12 27 74;             /* #0C1B4A */
+  --muted: 92 106 140;
+  --border: 226 231 243;
+  --success: 22 163 74;
+  --warn: 217 119 6;
+  --danger: 220 38 38;
+  /* Categorical chart order (validated: lightness band, chroma, CVD + normal-vision separation). Fixed order, never cycled. */
+  --chart-1: #2a55c9;
+  --chart-2: #e05a9f;
+  --chart-3: #3fa7d6;
+  --chart-4: #8b5cd6;
+  --chart-5: #f28a4c;
+  --chart-6: #2e9e8f;
+}
+
+html, body, #root { height: 100%; }
+body { @apply bg-[rgb(var(--background))] text-ink antialiased; font-family: 'Inter', system-ui, sans-serif; }
+
+@layer components {
+  .card { @apply rounded-xl2 border border-line bg-white shadow-card; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-primary { @apply btn bg-primary text-white shadow-sm shadow-primary/20 hover:bg-primary-dark; }
+  .btn-secondary { @apply btn border border-line bg-white text-ink hover:border-primary/30 hover:bg-lightblue; }
+  .btn-accent { @apply btn bg-accent text-white shadow-md shadow-accent/30 hover:brightness-110; }
+  .btn-glass { @apply btn border border-white/30 bg-white/10 text-white backdrop-blur hover:bg-white/20; }
+  .btn-danger { @apply btn bg-danger text-white hover:brightness-90; }
+  .btn-ghost { @apply btn text-muted hover:bg-lightblue hover:text-ink; }
+  .input { @apply w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink placeholder:text-muted/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:bg-slate-50; }
+  .label { @apply mb-1 block text-xs font-medium text-muted; }
+  .th { @apply whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted; }
+  .td { @apply px-4 py-3 text-sm; }
+
+  /* Brand surface: deep-blue gradient with a faint dot texture (sidebar, auth panel, landing hero/CTA). */
+  .surface-brand {
+    background-color: rgb(var(--primary-dark));
+    background-image:
+      radial-gradient(rgb(255 255 255 / 0.10) 1px, transparent 1px),
+      radial-gradient(120% 80% at 100% 0%, rgb(var(--primary-bright) / 0.55), transparent 60%),
+      linear-gradient(180deg, rgb(var(--primary)) 0%, rgb(var(--primary-dark)) 100%);
+    background-size: 18px 18px, 100% 100%, 100% 100%;
+    @apply text-white;
+  }
+}

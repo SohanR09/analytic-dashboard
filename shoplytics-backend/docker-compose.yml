@@ -1,0 +1,90 @@
+# Full stack:            docker compose up -d --build     (migrate -> API, plus MongoDB + Redis)
+# Infrastructure only:   docker compose up -d mongo redis (then `npm run dev` on the host)
+#  - MongoDB 7 as a single-node replica set (required by Prisma + transactions)
+#  - Redis 7 with a password (sessions, rate limiting, cache)
+#  - `migrate` syncs collections + indexes (incl. unique constraints) before the API starts
+#
+# Security: MongoDB and Redis are published on 127.0.0.1 ONLY (reachable from this machine for local dev /
+# db tools, never from the network). The API reaches them over the internal compose network.
+# Required in .env: JWT_ACCESS_SECRET, REDIS_PASSWORD, CLIENT_URL.
+services:
+  api:
+    build: .
+    container_name: shoplytics-api
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # Set here so a development .env can never put the container in development mode
+      # (dev mode returns password-reset tokens in API responses and stack traces on errors).
+      NODE_ENV: production
+      PORT: 5000
+      # Inside the compose network the services are reached by name, not 127.0.0.1.
+      DATABASE_URL: mongodb://mongo:27017/shoplytics?replicaSet=rs0&directConnection=true
+      REDIS_URL: redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}@redis:6379
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET in .env (32+ chars)}
+      CLIENT_URL: ${CLIENT_URL:?Set CLIENT_URL in .env to your frontend origin, e.g. https://app.example.com}
+    ports:
+      - "${PORT:-5000}:5000"
+    # The app gives in-flight requests 10s to finish on SIGTERM; give it a little more before SIGKILL.
+    stop_grace_period: 15s
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  migrate:
+    build:
+      context: .
+      target: migrate
+    container_name: shoplytics-migrate
+    restart: "no"
+    environment:
+      DATABASE_URL: mongodb://mongo:27017/shoplytics?replicaSet=rs0&directConnection=true
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  mongo:
+    image: mongo:7
+    container_name: shoplytics-mongo
+    restart: unless-stopped
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: >
+        echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'127.0.0.1:27017'}]}) }" |
+        mongosh --port 27017 --quiet
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 5s
+
+  redis:
+    image: redis:7-alpine
+    container_name: shoplytics-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}"]
+    environment:
+      REDISCLI_AUTH: ${REDIS_PASSWORD} # lets the healthcheck's redis-cli authenticate
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 3s
+
+volumes:
+  mongo-data:
+  redis-data:

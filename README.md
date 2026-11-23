@@ -2,6 +2,17 @@
 
 Shoplytics is an analytics dashboard for e-commerce businesses. One user can belong to several businesses and have a different role in each. Each business can track sales, revenue, inventory, products, customers and orders, and generate reports to export as CSV or PDF.
 
+## Live demo
+
+| | URL |
+|---|---|
+| Web app | [https://main.d2rn1r9jj8nmd2.amplifyapp.com](https://main.d2rn1r9jj8nmd2.amplifyapp.com/) |
+| API | [https://52-64-202-101.sslip.io/api/v1](https://52-64-202-101.sslip.io/api/v1) (health check: [`/health/ready`](https://52-64-202-101.sslip.io/api/v1/health/ready)) |
+
+Log in with any of the [demo accounts](#demo-accounts). The frontend is hosted on AWS Amplify; the API runs on AWS EC2 in Docker (behind nginx with a Let's Encrypt certificate), with MongoDB Atlas and Redis.
+
+## Applications
+
 This repository holds two applications:
 
 | Folder | What it is | Stack |
@@ -62,7 +73,7 @@ npm run dev                         # http://localhost:5173
 
 The backend allows `http://localhost:5173` by default (`CLIENT_URL`), so you don't need to change any CORS settings.
 
-To run the whole backend (MongoDB, Redis, migration and API) in Docker, see [Run everything in Docker](shoplytics-backend/README.md#run-everything-in-docker) and the production checklist in the backend README.
+To run the whole backend (Redis, migration and API, with MongoDB from `DATABASE_URL`) in Docker, see [Run everything in Docker](shoplytics-backend/README.md#run-everything-in-docker) and the production checklist in the backend README.
 
 ## Demo accounts
 

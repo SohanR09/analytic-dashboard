@@ -22,13 +22,17 @@ npm run dev                     # http://localhost:5000/api/v1
 ### Run everything in Docker
 
 ```bash
-cp .env.example .env              # set JWT_ACCESS_SECRET, REDIS_PASSWORD (+ matching REDIS_URL), CLIENT_URL
-docker compose up -d --build      # mongo + redis -> migrate (prisma db push) -> API
+cp .env.example .env              # set DATABASE_URL (external MongoDB, e.g. Atlas), JWT_ACCESS_SECRET, REDIS_PASSWORD, CLIENT_URL
+docker compose up -d --build      # redis -> migrate (prisma db push) -> API on port 80
 ```
 
-Startup order: MongoDB and Redis become healthy, the one-off `migrate` container syncs collections and **indexes (including the unique constraints)**, and only if that succeeds does the API start. Re-run it on its own with `docker compose run --rm migrate`.
+MongoDB is not part of this stack: the API and `migrate` use `DATABASE_URL` from `.env`, which must be a replica set (Atlas clusters are). The API is published on host port `API_HOST_PORT` (default `80`; set `API_HOST_PORT=5000` locally, or `127.0.0.1:5000` behind nginx).
 
-The API container always runs with `NODE_ENV=production` (set in the compose file, overriding `.env`). Inside the stack it reaches the other services as `mongo:27017` and `redis:6379`; compose sets `DATABASE_URL`/`REDIS_URL` to match. Everything else comes from `.env`.
+Startup order: Redis becomes healthy, the one-off `migrate` container syncs collections and **indexes (including the unique constraints)**, and only if that succeeds does the API start. Re-run it on its own with `docker compose run --rm migrate`.
+
+The API container always runs with `NODE_ENV=production` (set in the compose file, overriding `.env`). Inside the stack it reaches Redis as `redis:6379`; compose sets `REDIS_URL` to match. Everything else comes from `.env`.
+
+The `mongo` service is in the `local-db` profile and only starts when named (`docker compose up -d mongo redis`, as in Quick start).
 
 MongoDB and Redis are published on **127.0.0.1 only** (host-side dev tools and `npm run seed` work; the network cannot reach them). Redis requires `REDIS_PASSWORD`. MongoDB runs without authentication, so keep it off the network; for a managed setup point `DATABASE_URL` at MongoDB Atlas instead.
 
